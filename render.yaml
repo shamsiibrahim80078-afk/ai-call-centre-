@@ -1,5 +1,8 @@
 # Render Blueprint — VERIDIQ Telegram 24/7
 #
+# Prefer Fly.io for a cheaper / free-allowance-friendly long-poll worker:
+#   docs/DEPLOY_TELEGRAM_FLY.md  (Dockerfile + fly.toml)
+#
 # Architecture (pick ONE inbound path — Telegram allows only one getUpdates poller
 # OR one webhook URL at a time):
 #

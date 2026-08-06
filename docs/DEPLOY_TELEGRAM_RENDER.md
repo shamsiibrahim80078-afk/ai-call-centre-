@@ -1,5 +1,7 @@
 # Deploy VERIDIQ Telegram bot 24/7 on Render
 
+> **Free / cheaper alternative:** Fly.io long-poll worker (no public HTTP, typically ~$2/mo or legacy free allowance) — see **[DEPLOY_TELEGRAM_FLY.md](./DEPLOY_TELEGRAM_FLY.md)**. Render Background Workers are paid (~$7 Starter).
+
 ## Why this architecture
 
 **Recommended: Background Worker + long-poll (`getUpdates`)**
