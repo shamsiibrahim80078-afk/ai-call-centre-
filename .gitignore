@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.local
 *.db
 *.db-wal
 *.db-shm
@@ -11,3 +12,17 @@ venv/
 /_*.py
 logs/*.log
 .pytest_cache/
+node_modules/
+artifacts/
+cache/
+coverage/
+dist/
+typechain-types/
+frontend/dist/
+frontend/node_modules/
+data/
+uploads/
+reports_out/
+*.pem
+.mypy_cache/
+.ruff_cache/

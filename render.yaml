@@ -1,0 +1,90 @@
+# Render Blueprint — VERIDIQ Telegram 24/7
+#
+# Architecture (pick ONE inbound path — Telegram allows only one getUpdates poller
+# OR one webhook URL at a time):
+#
+# 1) Background Worker + long-poll (DEFAULT — recommended on Render Starter+)
+#    - Always-on process; no public URL; reuses existing getUpdates listener
+#    - Render datacenters reach api.telegram.org (no local VPN)
+#
+# 2) Optional Web Service + webhook (uncomment below)
+#    - Better if you only have free-tier web (cold starts OK; Telegram retries)
+#    - Needs HTTPS public URL (Render provides RENDER_EXTERNAL_URL)
+#
+# Full VERIDIQ FastAPI API is a SEPARATE web service if you want the dashboard online.
+# When using a dedicated Telegram worker, set VERIDIQ_TELEGRAM_LISTENER_IN_API=0 on the API.
+
+services:
+  - type: worker
+    name: veridiq-telegram-worker
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: pip install -r requirements-telegram.txt
+    startCommand: python scripts/run_telegram_worker.py
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: VERIDIQ_TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: VERIDIQ_TELEGRAM_DEFAULT_CHAT_ID
+        sync: false
+      - key: VERIDIQ_TELEGRAM_AUTO_REPLY
+        value: "1"
+      - key: VERIDIQ_TELEGRAM_WELCOME
+        value: "1"
+      - key: VERIDIQ_TELEGRAM_REPLY_ONLY_MENTIONS
+        value: "0"
+      - key: VERIDIQ_TELEGRAM_MODE
+        value: longpoll
+      # Optional — only if api.telegram.org is blocked from the region (rare on Render):
+      # - key: VERIDIQ_TELEGRAM_PROXY
+      #   sync: false
+      - key: LOG_LEVEL
+        value: INFO
+
+  # --- Optional: webhook web service (disable the worker above if you use this) ---
+  # - type: web
+  #   name: veridiq-telegram-webhook
+  #   runtime: python
+  #   plan: free
+  #   region: oregon
+  #   buildCommand: pip install -r requirements-telegram.txt
+  #   startCommand: python scripts/run_telegram_webhook.py
+  #   healthCheckPath: /healthz
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: "3.12.8"
+  #     - key: VERIDIQ_TELEGRAM_BOT_TOKEN
+  #       sync: false
+  #     - key: VERIDIQ_TELEGRAM_DEFAULT_CHAT_ID
+  #       sync: false
+  #     - key: VERIDIQ_TELEGRAM_AUTO_REPLY
+  #       value: "1"
+  #     - key: VERIDIQ_TELEGRAM_WELCOME
+  #       value: "1"
+  #     - key: VERIDIQ_TELEGRAM_MODE
+  #       value: webhook
+  #     - key: VERIDIQ_TELEGRAM_WEBHOOK_PATH
+  #       value: /telegram/webhook
+  #     - key: VERIDIQ_TELEGRAM_WEBHOOK_SECRET
+  #       generateValue: true
+  #     # Optional override; otherwise RENDER_EXTERNAL_URL + path is used on boot:
+  #     # - key: VERIDIQ_TELEGRAM_WEBHOOK_URL
+  #     #   sync: false
+  #     - key: LOG_LEVEL
+  #       value: INFO
+
+  # --- Optional: full VERIDIQ FastAPI (dashboard / API) — separate from Telegram ---
+  # - type: web
+  #   name: veridiq-api
+  #   runtime: python
+  #   plan: starter
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+  #   envVars:
+  #     - key: VERIDIQ_TELEGRAM_LISTENER_IN_API
+  #       value: "0"
+  #     - key: VERIDIQ_TELEGRAM_BOT_TOKEN
+  #       sync: false

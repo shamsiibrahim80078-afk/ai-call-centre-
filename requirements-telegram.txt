@@ -1,0 +1,8 @@
+# Slim deps for the Telegram 24/7 worker / webhook service on Render.
+# Prefer this over full requirements.txt when the service only runs the bot.
+requests==2.34.2
+python-dotenv==1.1.1
+fastapi==0.141.1
+uvicorn==0.52.0
+httpx==0.28.1
+pydantic==2.13.4
