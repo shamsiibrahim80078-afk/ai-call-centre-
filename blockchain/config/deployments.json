@@ -1,0 +1,23 @@
+{
+  "networks": {
+    "hardhat": {
+      "contracts": {
+        "WorkforceToken": null,
+        "WorkforceTreasury": null,
+        "SubscriptionManager": null,
+        "AgentMarketplace": null,
+        "TruthAttestation": null
+      }
+    },
+    "sepolia": {
+      "contracts": {
+        "WorkforceToken": null,
+        "WorkforceTreasury": null,
+        "SubscriptionManager": null,
+        "AgentMarketplace": null,
+        "TruthAttestation": null
+      }
+    }
+  },
+  "notes": "Populate addresses via env VERIDIQ_CONTRACT_* or after deploy scripts write this file."
+}

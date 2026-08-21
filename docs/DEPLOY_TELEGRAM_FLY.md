@@ -11,6 +11,8 @@
 
 **Confirmed model:** one Fly Machine runs `python scripts/run_telegram_worker.py`, which long-polls Telegram from Fly’s datacenter network. You do not need a VPN on your PC, and you do not need to expose a port.
 
+> **Mini App ≠ this worker.** Opening VERIDIQ inside Telegram needs a **public HTTPS frontend** URL (`VERIDIQ_TELEGRAM_MINIAPP_URL`) — see [TELEGRAM_MINI_APP.md](./TELEGRAM_MINI_APP.md). Do not confuse Vercel/static hosting of the UI with this long-poll worker.
+
 Run **one** inbound path only (do not also run a local poller or a webhook for the same bot).
 
 ---

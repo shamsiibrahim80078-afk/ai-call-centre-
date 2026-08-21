@@ -1,0 +1,44 @@
+{
+  "network": "Hardhat",
+  "chainId": 31337,
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deployed_at": "2026-07-31T12:47:28.742Z",
+  "contracts": [
+    {
+      "token_name": "Workforce Token",
+      "token_symbol": "WORK",
+      "contract_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "network": "Hardhat",
+      "tx_hash": "0x3e5eee6a755cf047aac71697dfb5c4e038bd3bb1318261088375a9c92d3780df",
+      "deployed_at": "2026-07-31T12:47:28.742Z",
+      "contract_name": "WorkforceToken"
+    },
+    {
+      "token_name": "Workforce Treasury",
+      "token_symbol": "TREASURY",
+      "contract_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+      "network": "Hardhat",
+      "tx_hash": "0x762df724f0cabb741ae540efab297c77d483c5539a1e76de287d2686e630594e",
+      "deployed_at": "2026-07-31T12:47:28.742Z",
+      "contract_name": "WorkforceTreasury"
+    },
+    {
+      "token_name": "Subscription Manager",
+      "token_symbol": "SUB",
+      "contract_address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "network": "Hardhat",
+      "tx_hash": "0x4ccdcb2a33bc7e9e65d41410f5d54fb18e675a5f7ce8af02c65050d89bf39447",
+      "deployed_at": "2026-07-31T12:47:28.742Z",
+      "contract_name": "SubscriptionManager"
+    },
+    {
+      "token_name": "Agent Marketplace",
+      "token_symbol": "AGNT",
+      "contract_address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+      "network": "Hardhat",
+      "tx_hash": "0x26246aa976181ea6fe48c4842ff3a5e6f6fa3ec87b4d61fd7b1a869784e70e98",
+      "deployed_at": "2026-07-31T12:47:28.742Z",
+      "contract_name": "AgentMarketplace"
+    }
+  ]
+}

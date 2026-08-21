@@ -1,0 +1,56 @@
+{
+  "storyboard_id": "498998f4-990b-43b7-b6a8-e84f74e7920d",
+  "campaign_id": null,
+  "feature": "truth_verification",
+  "feature_title": "AI Truth Verification",
+  "style": "explainer",
+  "duration_sec": 30,
+  "title": "VeriDiQ \u2014 AI Truth Verification in 30s",
+  "logline": "A 30-second explainer showing how VeriDiQ's ai truth verification works.",
+  "product_brief": "VeriDiQ is an AI-native truth verification and workforce platform: a live team of specialist AI agents verifies claims, investigates evidence, tracks markets, and can optionally attest findings on-chain \u2014 all with draft-first, human-approved communication so nothing external ever sends itself.",
+  "script": "[Scene 1] In a world of unverified claims,\n[Scene 2] VeriDiQ's ai truth verification gives you an answer you can actually check.\n[Scene 3] A live team of specialist agents does the work \u2014 transparently, in real time.\n[Scene 4] VeriDiQ runs statements, transcripts, and media through a multi-agent verification pipeline \u2014 claim extraction, fact-checking against live sources, deception/emotion signal scoring, and a final truth score with a documented confidence level.\n[Scene 5] Start verifying, for free, at veridiq.ai.",
+  "shot_list": [
+    {
+      "scene": 1,
+      "duration_sec": 5,
+      "shot": "Cold open \u2014 VeriDiQ wordmark animates in over a dark dashboard background.",
+      "on_screen_text": "VeriDiQ",
+      "voiceover": "In a world of unverified claims,"
+    },
+    {
+      "scene": 2,
+      "duration_sec": 5,
+      "shot": "Screen capture of the AI Truth Verification view in the VeriDiQ dashboard, cursor highlighting the key result.",
+      "on_screen_text": "AI Truth Verification",
+      "voiceover": "VeriDiQ's ai truth verification gives you an answer you can actually check."
+    },
+    {
+      "scene": 3,
+      "duration_sec": 5,
+      "shot": "Split screen: AI agent avatar cards animate from idle to 'working' as a job runs live.",
+      "on_screen_text": "Live AI Workforce",
+      "voiceover": "A live team of specialist agents does the work \u2014 transparently, in real time."
+    },
+    {
+      "scene": 4,
+      "duration_sec": 5,
+      "shot": "VeriDiQ runs statements, transcripts, and media through a multi-agent verification pipelin... rendered as on-screen bullet callouts over a blurred UI backdrop.",
+      "on_screen_text": "AI Truth Verification",
+      "voiceover": "VeriDiQ runs statements, transcripts, and media through a multi-agent verification pipeline \u2014 claim extraction, fact-checking against live sources, deception/emotion signal scoring, and a final truth score with a documented confidence level."
+    },
+    {
+      "scene": 5,
+      "duration_sec": 10,
+      "shot": "Logo lockup with call-to-action button overlay.",
+      "on_screen_text": "Try VeriDiQ free \u2014 veridiq.ai",
+      "voiceover": "Start verifying, for free, at veridiq.ai."
+    }
+  ],
+  "call_to_action": "Try VeriDiQ free at veridiq.ai",
+  "created_at": "2026-08-03T18:26:57+00:00",
+  "render": {
+    "status": "configuration_required",
+    "message": "Set VERIDIQ_VIDEO_RENDER_API_KEY and VERIDIQ_VIDEO_RENDER_WEBHOOK_URL for your chosen render provider's official API (e.g. Shotstack, Creatomate) to turn a storyboard into an MP4. Storyboards/scripts/shot lists always work offline without this.",
+    "note": "Render is optional \u2014 the script and shot list above are complete and can be handed to any editor or freelancer as-is. Configure VERIDIQ_VIDEO_RENDER_API_KEY / VERIDIQ_VIDEO_RENDER_WEBHOOK_URL to submit an automated render job via POST /api/v1/veridiq/marketing/video/render."
+  }
+}

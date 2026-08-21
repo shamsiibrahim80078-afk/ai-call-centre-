@@ -1,0 +1,77 @@
+{
+  "storyboard_id": "448cda04-4ce3-43a1-b1a0-c090ab10b686",
+  "campaign_id": null,
+  "feature": "full_product_tour",
+  "feature_title": "Full VERIDIQ Platform Tour",
+  "style": "product_demo",
+  "duration_sec": 75,
+  "title": "VERIDIQ \u2014 Full App Demo (75s)",
+  "logline": "A 75-second product demo reel covering landing, dashboard, verification, collaboration hub, LiveKit calling, postings, marketing, and attestation.",
+  "product_brief": "VeriDiQ is an AI-native truth verification and workforce platform: a live team of specialist AI agents verifies claims, investigates evidence, tracks markets, and can optionally attest findings on-chain \u2014 all with draft-first, human-approved communication so nothing external ever sends itself.",
+  "script": "[Scene 1] This is VERIDIQ \u2014 AI truth verification and a live AI workforce in one platform.\n[Scene 2] Specialist agents run real jobs you can watch execute \u2014 verification, research, market, and more.\n[Scene 3] Statements and media go through a multi-agent pipeline to a documented truth score.\n[Scene 4] Watch agents collaborate live. Accept an invite when they call you into a meeting.\n[Scene 5] Personal meetings join real LiveKit video \u2014 not a fake chat-only call.\n[Scene 6] Mira drafts Gemini-style posts and video storyboards \u2014 publish only after you approve.\n[Scene 7] Marketing drafts, ops, and optional on-chain attestation \u2014 draft-first, human in the loop.\n[Scene 8] One platform. Live agents. Verified truth. Start at your VERIDIQ dashboard.",
+  "shot_list": [
+    {
+      "scene": 1,
+      "duration_sec": 8,
+      "shot": "Full-bleed landing hero \u2014 VERIDIQ wordmark, midnight gradient, electric blue CTA.",
+      "on_screen_text": "VERIDIQ",
+      "voiceover": "This is VERIDIQ \u2014 AI truth verification and a live AI workforce in one platform."
+    },
+    {
+      "scene": 2,
+      "duration_sec": 8,
+      "shot": "Dashboard overview with agent roster cards switching from idle to working.",
+      "on_screen_text": "Live AI Workforce",
+      "voiceover": "Specialist agents run real jobs you can watch execute \u2014 verification, research, market, and more."
+    },
+    {
+      "scene": 3,
+      "duration_sec": 8,
+      "shot": "Verification Center \u2014 claim input, truth score, evidence citations panel.",
+      "on_screen_text": "Truth Verification",
+      "voiceover": "Statements and media go through a multi-agent pipeline to a documented truth score."
+    },
+    {
+      "scene": 4,
+      "duration_sec": 8,
+      "shot": "Collaboration Hub \u2014 observer feed of live agent threads, invite toast appears.",
+      "on_screen_text": "Collaboration Hub",
+      "voiceover": "Watch agents collaborate live. Accept an invite when they call you into a meeting."
+    },
+    {
+      "scene": 5,
+      "duration_sec": 8,
+      "shot": "AI Calling / LiveKit room \u2014 video tiles, join controls, Marcus arranging a meeting.",
+      "on_screen_text": "LiveKit Meetings",
+      "voiceover": "Personal meetings join real LiveKit video \u2014 not a fake chat-only call."
+    },
+    {
+      "scene": 6,
+      "duration_sec": 8,
+      "shot": "Postings Studio \u2014 Mira chat drafting a VERIDIQ social post with artifact panel.",
+      "on_screen_text": "Postings Studio",
+      "voiceover": "Mira drafts Gemini-style posts and video storyboards \u2014 publish only after you approve."
+    },
+    {
+      "scene": 7,
+      "duration_sec": 8,
+      "shot": "Marketing Agency queue + Workforce page + Blockchain attestation badge.",
+      "on_screen_text": "Growth \u00b7 Ops \u00b7 Chain",
+      "voiceover": "Marketing drafts, ops, and optional on-chain attestation \u2014 draft-first, human in the loop."
+    },
+    {
+      "scene": 8,
+      "duration_sec": 19,
+      "shot": "Logo lockup with CTA over dark UI montage.",
+      "on_screen_text": "Try VERIDIQ",
+      "voiceover": "One platform. Live agents. Verified truth. Start at your VERIDIQ dashboard."
+    }
+  ],
+  "call_to_action": "Open VERIDIQ \u2014 /dashboard",
+  "created_at": "2026-08-07T16:15:45+00:00",
+  "render": {
+    "status": "configuration_required",
+    "message": "Set VERIDIQ_VIDEO_RENDER_API_KEY and VERIDIQ_VIDEO_RENDER_WEBHOOK_URL for your chosen render provider's official API (e.g. Shotstack, Creatomate) to turn a storyboard into an MP4. Storyboards/scripts/shot lists always work offline without this.",
+    "note": "This is a complete shot list + VO script for the whole app. MP4 render needs VERIDIQ_VIDEO_RENDER_API_KEY + VERIDIQ_VIDEO_RENDER_WEBHOOK_URL (Shotstack/Creatomate/etc). Until then the storyboard is the deliverable."
+  }
+}

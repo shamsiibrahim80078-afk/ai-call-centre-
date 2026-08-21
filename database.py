@@ -122,6 +122,387 @@ CREATE TABLE IF NOT EXISTS scheduled_tasks (
     completed_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS orchestration_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_uuid TEXT NOT NULL UNIQUE,
+    topic TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    source TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS workflow_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workflow_uuid TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    steps_json TEXT NOT NULL,
+    current_step INTEGER NOT NULL DEFAULT 0,
+    context_json TEXT,
+    last_error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS system_health_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    full_name TEXT,
+    role TEXT NOT NULL DEFAULT 'analyst',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_uuid TEXT NOT NULL UNIQUE,
+    user_id INTEGER,
+    title TEXT,
+    status TEXT NOT NULL DEFAULT 'queued',
+    input_json TEXT,
+    result_json TEXT,
+    truth_score REAL,
+    risk_level TEXT,
+    report_path TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_agent_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_uuid TEXT NOT NULL UNIQUE,
+    job_id TEXT,
+    agent_type TEXT NOT NULL,
+    agent_name TEXT NOT NULL,
+    ok INTEGER NOT NULL,
+    confidence REAL,
+    request_json TEXT,
+    response_json TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_traces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trace_uuid TEXT NOT NULL UNIQUE,
+    job_id TEXT,
+    graph_json TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+-- Phase 5.1 persistence — replaces in-memory dict/deque state so calling
+-- campaigns, comms drafts, and integration activity survive a backend
+-- restart (see docs/veridiq/05-Backend-Schema.md §4).
+CREATE TABLE IF NOT EXISTS veridiq_calling_campaigns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    campaign_id TEXT NOT NULL UNIQUE,
+    to_number TEXT NOT NULL,
+    contact_name TEXT,
+    purpose TEXT,
+    script TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued_for_approval',
+    call_result_json TEXT,
+    summary TEXT,
+    crm_sync_json TEXT,
+    followup_draft_id TEXT,
+    created_by_user_id INTEGER,
+    created_at TEXT NOT NULL,
+    approved_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_comms_drafts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    draft_id TEXT NOT NULL UNIQUE,
+    kind TEXT NOT NULL,
+    subject TEXT,
+    body TEXT NOT NULL,
+    recipient_hint TEXT,
+    external_action_status TEXT NOT NULL DEFAULT 'draft_only',
+    approved_channel TEXT,
+    send_attempt_json TEXT,
+    created_by_user_id INTEGER,
+    created_at TEXT NOT NULL,
+    approved_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_integration_activity (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform TEXT NOT NULL,
+    agent_type TEXT,
+    job_id TEXT,
+    task TEXT NOT NULL,
+    workflow_stage TEXT,
+    started_at TEXT NOT NULL,
+    finished_at TEXT NOT NULL,
+    progress REAL,
+    completion_status TEXT NOT NULL,
+    api_response_status TEXT,
+    recent_activity TEXT,
+    errors TEXT
+);
+
+-- Phase 6 — Agent control/runtime layer: explicit start/stop/pause/resume
+-- state per agent_type, a command audit log, campaign/task assignment log,
+-- and "Run Agent Test" execution history. Mirrors the Phase 5.1 persistence
+-- pattern (SQLite-backed, never in-memory-only) so admin actions survive a
+-- backend restart (see docs/veridiq/05-Backend-Schema.md).
+CREATE TABLE IF NOT EXISTS veridiq_agent_control (
+    agent_type TEXT PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'running',
+    updated_at TEXT NOT NULL,
+    updated_by TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_agent_commands (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    command_uuid TEXT NOT NULL UNIQUE,
+    agent_type TEXT NOT NULL,
+    command TEXT NOT NULL,
+    payload_json TEXT,
+    status TEXT NOT NULL DEFAULT 'queued',
+    result_json TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    finished_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_agent_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    assignment_uuid TEXT NOT NULL UNIQUE,
+    agent_type TEXT NOT NULL,
+    campaign_type TEXT NOT NULL,
+    payload_json TEXT,
+    status TEXT NOT NULL DEFAULT 'queued',
+    result_json TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    finished_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_agent_test_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_uuid TEXT NOT NULL UNIQUE,
+    agent_type TEXT NOT NULL,
+    platform TEXT,
+    overall_status TEXT NOT NULL,
+    steps_json TEXT NOT NULL,
+    metrics_json TEXT,
+    started_at TEXT NOT NULL,
+    finished_at TEXT NOT NULL,
+    duration_ms REAL
+);
+
+-- Marketing Agency — campaign briefs the daily content-pack generator and
+-- comms-draft queue key off of. Posts are always queued as
+-- `veridiq_comms_drafts` rows (campaign_id-tagged) so the same draft ->
+-- approve -> send gate used everywhere else in the platform applies here —
+-- no separate "queue" table or bypass path.
+CREATE TABLE IF NOT EXISTS veridiq_marketing_campaigns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    campaign_id TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    product_brief TEXT,
+    channels_json TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    last_generated_date TEXT,
+    created_by_user_id INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+-- Agent SDK task inbox / progress (inter-agent communication)
+CREATE TABLE IF NOT EXISTS veridiq_sdk_tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id TEXT NOT NULL UNIQUE,
+    from_agent TEXT NOT NULL,
+    to_agent TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    priority INTEGER NOT NULL DEFAULT 100,
+    job_id TEXT,
+    progress REAL NOT NULL DEFAULT 0,
+    confidence REAL,
+    result_json TEXT,
+    error TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    finished_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_sdk_streams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    stream_id TEXT NOT NULL,
+    agent_type TEXT NOT NULL,
+    task_id TEXT,
+    chunk_json TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_webrtc_rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id TEXT NOT NULL UNIQUE,
+    label TEXT,
+    agent_type TEXT,
+    status TEXT NOT NULL DEFAULT 'open',
+    meta_json TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_webrtc_signals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    signal_id TEXT NOT NULL UNIQUE,
+    room_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    from_peer TEXT NOT NULL,
+    sdp TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+-- LiveKit meetings hub (AI Calling rebuild) — agenda chat, scheduled PKT
+-- meetings, join-gate, and Telegram go-live announce. Never fabricate LiveKit
+-- video; tokens are minted only when credentials are configured.
+CREATE TABLE IF NOT EXISTS veridiq_meetings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    meeting_id TEXT NOT NULL UNIQUE,
+    topic TEXT NOT NULL,
+    agenda_json TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    scheduled_at_pkt TEXT,
+    scheduled_at_utc TEXT,
+    livekit_room TEXT,
+    join_gate_status TEXT NOT NULL DEFAULT 'closed',
+    join_requested_at TEXT,
+    telegram_announce_json TEXT,
+    participants_json TEXT,
+    created_at TEXT NOT NULL,
+    started_at TEXT,
+    ended_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_meeting_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id TEXT NOT NULL UNIQUE,
+    meeting_id TEXT,
+    hub_id TEXT NOT NULL DEFAULT 'default',
+    sender_type TEXT NOT NULL,
+    sender_agent TEXT,
+    sender_name TEXT,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_meeting_hub (
+    hub_id TEXT PRIMARY KEY,
+    status TEXT NOT NULL DEFAULT 'open',
+    ceo_entered_at TEXT,
+    active_meeting_id TEXT,
+    meta_json TEXT,
+    updated_at TEXT NOT NULL
+);
+
+-- Live Collaboration Hub: agent↔agent working threads (observer feed)
+CREATE TABLE IF NOT EXISTS veridiq_live_threads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'live',
+    participants_json TEXT,
+    meeting_id TEXT,
+    turn_index INTEGER NOT NULL DEFAULT 0,
+    last_tick_at TEXT,
+    meta_json TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_live_thread_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id TEXT NOT NULL UNIQUE,
+    thread_id TEXT NOT NULL,
+    agent_id TEXT,
+    sender_name TEXT,
+    body TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'chat',
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_hub_invites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invite_id TEXT NOT NULL UNIQUE,
+    thread_id TEXT,
+    meeting_id TEXT,
+    user_id TEXT NOT NULL DEFAULT 'default',
+    invited_by_agent TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    message TEXT,
+    created_at TEXT NOT NULL,
+    responded_at TEXT
+);
+
+-- Mira Postings Studio: persistent ChatGPT-style conversations + media URLs
+CREATE TABLE IF NOT EXISTS veridiq_postings_chats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL DEFAULT 'New chat',
+    user_id TEXT NOT NULL DEFAULT 'default',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_postings_chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message_id TEXT NOT NULL UNIQUE,
+    chat_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    text TEXT NOT NULL DEFAULT '',
+    image_url TEXT,
+    video_url TEXT,
+    audio_url TEXT,
+    meta_json TEXT,
+    created_at TEXT NOT NULL
+);
+
+-- Mira learning loop: ratings + legal brand/reference index (not scraped web)
+CREATE TABLE IF NOT EXISTS veridiq_postings_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    feedback_id TEXT NOT NULL UNIQUE,
+    prompt TEXT NOT NULL DEFAULT '',
+    style TEXT NOT NULL DEFAULT '',
+    media_url TEXT NOT NULL DEFAULT '',
+    media_type TEXT NOT NULL DEFAULT 'image',
+    rating INTEGER NOT NULL,
+    chat_id TEXT,
+    topic TEXT NOT NULL DEFAULT '',
+    notes TEXT,
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veridiq_postings_references (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ref_id TEXT NOT NULL UNIQUE,
+    source TEXT NOT NULL DEFAULT 'upload',
+    filename TEXT,
+    path TEXT,
+    url TEXT,
+    topic TEXT NOT NULL DEFAULT '',
+    tags_json TEXT,
+    license TEXT NOT NULL DEFAULT 'user_upload',
+    attribution TEXT,
+    description TEXT,
+    created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
 CREATE INDEX IF NOT EXISTS idx_agents_type ON agents_registry(agent_type);
 CREATE INDEX IF NOT EXISTS idx_contracts_network ON deployed_contracts(network);
@@ -130,11 +511,43 @@ CREATE INDEX IF NOT EXISTS idx_memory_agent ON agent_memory(agent_uuid);
 CREATE INDEX IF NOT EXISTS idx_memory_tags ON agent_memory(tags);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON scheduled_tasks(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_priority ON scheduled_tasks(priority);
+CREATE INDEX IF NOT EXISTS idx_events_topic ON orchestration_events(topic);
+CREATE INDEX IF NOT EXISTS idx_workflows_status ON workflow_runs(status);
+CREATE INDEX IF NOT EXISTS idx_calling_campaigns_status ON veridiq_calling_campaigns(status);
+CREATE INDEX IF NOT EXISTS idx_comms_drafts_status ON veridiq_comms_drafts(external_action_status);
+CREATE INDEX IF NOT EXISTS idx_integration_activity_platform ON veridiq_integration_activity(platform);
+CREATE INDEX IF NOT EXISTS idx_integration_activity_agent ON veridiq_integration_activity(agent_type);
+CREATE INDEX IF NOT EXISTS idx_agent_commands_type ON veridiq_agent_commands(agent_type);
+CREATE INDEX IF NOT EXISTS idx_agent_assignments_type ON veridiq_agent_assignments(agent_type);
+CREATE INDEX IF NOT EXISTS idx_agent_test_runs_type ON veridiq_agent_test_runs(agent_type);
+CREATE INDEX IF NOT EXISTS idx_sdk_tasks_to ON veridiq_sdk_tasks(to_agent, status);
+CREATE INDEX IF NOT EXISTS idx_sdk_tasks_from ON veridiq_sdk_tasks(from_agent);
+CREATE INDEX IF NOT EXISTS idx_sdk_streams_agent ON veridiq_sdk_streams(agent_type);
+CREATE INDEX IF NOT EXISTS idx_webrtc_signals_room ON veridiq_webrtc_signals(room_id);
+CREATE INDEX IF NOT EXISTS idx_marketing_campaigns_status ON veridiq_marketing_campaigns(status);
+CREATE INDEX IF NOT EXISTS idx_meetings_status ON veridiq_meetings(status);
+CREATE INDEX IF NOT EXISTS idx_meeting_messages_hub ON veridiq_meeting_messages(hub_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_meeting_messages_meeting ON veridiq_meeting_messages(meeting_id);
+CREATE INDEX IF NOT EXISTS idx_live_threads_status ON veridiq_live_threads(status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_live_thread_messages_thread ON veridiq_live_thread_messages(thread_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_hub_invites_user ON veridiq_hub_invites(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_postings_chats_user ON veridiq_postings_chats(user_id, updated_at);
+CREATE INDEX IF NOT EXISTS idx_postings_chat_messages_chat ON veridiq_postings_chat_messages(chat_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_postings_feedback_rating ON veridiq_postings_feedback(rating, created_at);
+CREATE INDEX IF NOT EXISTS idx_postings_feedback_chat ON veridiq_postings_feedback(chat_id);
+CREATE INDEX IF NOT EXISTS idx_postings_refs_topic ON veridiq_postings_references(topic, created_at);
 """
 
 PHASE2_AGENT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("agent_uuid", "TEXT"),
     ("agent_name", "TEXT"),
+)
+
+PHASE6_COMMS_DRAFT_COLUMNS: tuple[tuple[str, str], ...] = (
+    # Marketing Agency — links a comms draft back to the campaign that queued
+    # it so /marketing/daily/status and /marketing/queue can filter without a
+    # separate queue table (see docs/veridiq/05-Backend-Schema.md).
+    ("campaign_id", "TEXT"),
 )
 
 PHASE3_LEAD_COLUMNS: tuple[tuple[str, str], ...] = (
@@ -168,6 +581,16 @@ def initialize_database(db_path: Path | str | None = None) -> Path:
             _ensure_column(conn, "agents_registry", column, col_type)
         for column, col_type in PHASE3_LEAD_COLUMNS:
             _ensure_column(conn, "leads", column, col_type)
+        for column, col_type in PHASE6_COMMS_DRAFT_COLUMNS:
+            _ensure_column(conn, "veridiq_comms_drafts", column, col_type)
+        _ensure_column(conn, "veridiq_users", "clerk_user_id", "TEXT")
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_veridiq_users_clerk "
+            "ON veridiq_users(clerk_user_id) WHERE clerk_user_id IS NOT NULL;"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_comms_drafts_campaign ON veridiq_comms_drafts(campaign_id);"
+        )
         conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_agents_uuid "
             "ON agents_registry(agent_uuid) WHERE agent_uuid IS NOT NULL;"
@@ -193,6 +616,9 @@ def verify_schema(db_path: Path | str | None = None) -> dict[str, list[str]]:
         "agent_memory",
         "agent_state",
         "scheduled_tasks",
+        "orchestration_events",
+        "workflow_runs",
+        "system_health_snapshots",
     )
     result: dict[str, list[str]] = {}
     with db_session(db_path) as conn:

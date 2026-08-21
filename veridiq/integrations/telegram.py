@@ -24,6 +24,9 @@ WEBHOOK_SECRET = "VERIDIQ_TELEGRAM_WEBHOOK_SECRET"
 WEBHOOK_PATH = "VERIDIQ_TELEGRAM_WEBHOOK_PATH"
 # When 0, FastAPI lifespan will not start the embedded long-poller (use dedicated worker/webhook).
 LISTENER_IN_API = "VERIDIQ_TELEGRAM_LISTENER_IN_API"
+# Public HTTPS URL of the Vite frontend (Telegram Mini App / Menu Button web_app).
+# Not the long-poll worker — Mini App is just the website opened inside Telegram.
+MINIAPP_URL = "VERIDIQ_TELEGRAM_MINIAPP_URL"
 ENV_VARS = [
     BOT_TOKEN,
     DEFAULT_CHAT_ID,
@@ -36,6 +39,7 @@ ENV_VARS = [
     WEBHOOK_SECRET,
     WEBHOOK_PATH,
     LISTENER_IN_API,
+    MINIAPP_URL,
 ]
 # Optional aliases (same meaning; VERIDIQ_* preferred)
 _BOT_TOKEN_ALIASES = ("TELEGRAM_BOT_TOKEN", "BOT_TOKEN")
@@ -53,6 +57,7 @@ CAPABILITIES = [
     "get_updates (long-polling inbound auto-reply when VERIDIQ_TELEGRAM_AUTO_REPLY=1)",
     "welcome new_chat_members (when VERIDIQ_TELEGRAM_WELCOME=1; bot must see join events)",
     "webhook (setWebhook + HTTPS push — preferred on Render free/sleeping web)",
+    "mini_app menu button (setChatMenuButton web_app URL — VERIDIQ_TELEGRAM_MINIAPP_URL)",
 ]
 DOCS = "https://core.telegram.org/bots/api"
 
@@ -94,6 +99,11 @@ def resolve_webhook_url() -> str:
     if base:
         return f"{base}{webhook_path()}"
     return ""
+
+
+def miniapp_url() -> str:
+    """Public HTTPS frontend URL for the Telegram Mini App menu button."""
+    return (os.getenv(MINIAPP_URL) or "").strip().rstrip("/")
 
 T = TypeVar("T")
 
@@ -490,6 +500,100 @@ def get_me(*, listener_fast: bool = False) -> dict[str, Any]:
         }
     except Exception as exc:
         return {"status": "error", "message": f"Telegram getMe failed: {_safe_exc_message(exc)}"}
+
+
+def set_chat_menu_button(
+    *,
+    url: Optional[str] = None,
+    text: str = "Open VERIDIQ",
+    chat_id: Optional[str] = None,
+) -> dict[str, Any]:
+    """Set the bot Menu Button to open a Mini App (``web_app`` URL).
+
+    Uses Bot API ``setChatMenuButton``. Default (no ``chat_id``) sets the
+    button for all private chats. ``url`` must be public HTTPS — Telegram
+    will not open ``http://127.0.0.1``.
+    """
+    token = bot_token()
+    if not token:
+        return {"status": "configuration_required", "message": f"Set {BOT_TOKEN}."}
+    target = (url or miniapp_url()).strip()
+    if not target:
+        return {
+            "status": "configuration_required",
+            "message": f"Set {MINIAPP_URL} (public HTTPS frontend) or pass url=.",
+        }
+    if not target.lower().startswith("https://"):
+        return {
+            "status": "error",
+            "message": "Mini App URL must be HTTPS (Telegram rejects localhost/http).",
+        }
+    label = (text or "Open VERIDIQ").strip()[:64] or "Open VERIDIQ"
+    menu_button: dict[str, Any] = {
+        "type": "web_app",
+        "text": label,
+        "web_app": {"url": target},
+    }
+    payload: dict[str, Any] = {"menu_button": menu_button}
+    if chat_id is not None and str(chat_id).strip():
+        payload["chat_id"] = str(chat_id).strip()
+    try:
+        resp = _api_post(
+            f"https://api.telegram.org/bot{token}/setChatMenuButton",
+            json=payload,
+            listener_fast=True,
+        )
+        data = resp.json() if resp.content else {}
+        if resp.ok and data.get("ok"):
+            return {
+                "status": "ok",
+                "url": target,
+                "text": label,
+                "message": f"Menu button set to Mini App {target}",
+            }
+        return {
+            "status": "error",
+            "message": (
+                f"Telegram setChatMenuButton failed: "
+                f"{data.get('description') or f'HTTP {resp.status_code}'}"
+            ),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "message": f"Telegram setChatMenuButton failed: {_safe_exc_message(exc)}",
+        }
+
+
+def get_chat_menu_button(*, chat_id: Optional[str] = None) -> dict[str, Any]:
+    """Read the current Menu Button (default or per-chat)."""
+    token = bot_token()
+    if not token:
+        return {"status": "configuration_required", "message": f"Set {BOT_TOKEN}."}
+    params: dict[str, Any] = {}
+    if chat_id is not None and str(chat_id).strip():
+        params["chat_id"] = str(chat_id).strip()
+    try:
+        resp = _api_get(
+            f"https://api.telegram.org/bot{token}/getChatMenuButton",
+            params=params or None,
+            listener_fast=True,
+        )
+        data = resp.json() if resp.content else {}
+        if resp.ok and data.get("ok"):
+            return {"status": "ok", "result": data.get("result") or {}}
+        return {
+            "status": "error",
+            "message": (
+                f"Telegram getChatMenuButton failed: "
+                f"{data.get('description') or f'HTTP {resp.status_code}'}"
+            ),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "message": f"Telegram getChatMenuButton failed: {_safe_exc_message(exc)}",
+        }
 
 
 def get_updates(

@@ -21,6 +21,7 @@ typechain-types/
 frontend/dist/
 frontend/node_modules/
 data/
+marketing_out/uploads/
 uploads/
 reports_out/
 *.pem

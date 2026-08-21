@@ -1,0 +1,36 @@
+{
+  "model_id": "mira_cinematic_v1",
+  "display_name": "Mira Cinematic Engine",
+  "owner": "VERIDIQ / Mira (posting_studio)",
+  "kind": "first_party_pipeline",
+  "honesty": {
+    "is_trained_foundation_model": false,
+    "is_google_veo": false,
+    "description": "Branded multi-stage free pipeline — not a Veo-scale neural video model. No GPU training in this repo. Chains open free techniques: Quality Injection prompts, Pollinations Flux keyframes, local motion enhance, 1080p/30fps assemble, edge-tts VO."
+  },
+  "cfg": 7.5,
+  "steps": 40,
+  "fps": 30,
+  "resolution": { "width": 1920, "height": 1080 },
+  "still_gen": { "width": 1280, "height": 720, "model": "flux", "default_stills": 4 },
+  "motion": {
+    "ken_burns_zoom_span": 0.14,
+    "crossfade_sec": 0.7,
+    "midframe_blend": true,
+    "ease": "smoothstep",
+    "unsharp": { "radius": 1.2, "percent": 120, "threshold": 2 }
+  },
+  "audio": { "provider": "edge-tts", "rate": "-8%", "pitch": "+2Hz" },
+  "quality_anchor": "Photorealistic 4K render, 60fps smooth fluid motion, cinematic studio lighting, volumetric light rays, shallow depth of field with realistic bokeh background, sharp focus, ray-traced reflections, hyper-detailed textures, professional color grading, zero motion blur distortion.",
+  "shot_templates": [
+    { "label": "Wide establishing", "camera": "wide framing, eye-level", "motion": "slow cinematic dolly in" },
+    { "label": "Medium action", "camera": "medium shot, eye-level", "motion": "smooth cinematic panning" },
+    { "label": "Close-up detail", "camera": "close-up framing, eye-level", "motion": "subtle push-in, 60fps fluid motion" },
+    { "label": "Hero finale", "camera": "medium hero shot, eye-level", "motion": "slow push-in with ambient drift" },
+    { "label": "Three-quarter", "camera": "medium shot, slight low-angle", "motion": "gentle orbit pan" },
+    { "label": "Environment context", "camera": "wide framing, bird's-eye", "motion": "smooth panning across scene" }
+  ],
+  "look_matching": "sharp subject, soft bokeh background, cinematic grade — bright daylight for colorful non-noir topics; office aesthetic only when user asks agents/workspace",
+  "paid_apis": { "veo": false, "pollinations_video": false },
+  "free_unlimited": true
+}

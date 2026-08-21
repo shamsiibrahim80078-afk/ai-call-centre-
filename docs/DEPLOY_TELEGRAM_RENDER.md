@@ -2,6 +2,8 @@
 
 > **Free / cheaper alternative:** Fly.io long-poll worker (no public HTTP, typically ~$2/mo or legacy free allowance) — see **[DEPLOY_TELEGRAM_FLY.md](./DEPLOY_TELEGRAM_FLY.md)**. Render Background Workers are paid (~$7 Starter).
 
+> **Mini App ≠ this worker.** The in-Telegram UI needs a public HTTPS **frontend** (`VERIDIQ_TELEGRAM_MINIAPP_URL`) — see [TELEGRAM_MINI_APP.md](./TELEGRAM_MINI_APP.md).
+
 ## Why this architecture
 
 **Recommended: Background Worker + long-poll (`getUpdates`)**
