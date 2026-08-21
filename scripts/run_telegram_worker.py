@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Production entrypoint: Telegram long-poll Background Worker (Render).
+"""Production entrypoint: Telegram long-poll worker (Fly.io / Render / local).
 
 Usage:
   python scripts/run_telegram_worker.py
   # or: python -m veridiq.integrations.telegram_listener
 
 Requires VERIDIQ_TELEGRAM_BOT_TOKEN. Do not run alongside another getUpdates poller.
+Deploy: docs/DEPLOY_TELEGRAM_FLY.md (preferred) or docs/DEPLOY_TELEGRAM_RENDER.md
 """
 
 from __future__ import annotations

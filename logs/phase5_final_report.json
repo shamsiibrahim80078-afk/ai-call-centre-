@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "probes": {
+    "backend_health": 200,
+    "contracts": 200,
+    "dashboard": 200,
+    "frontend": 200,
+    "frontend_proxy_health": 200
+  },
+  "row_counts": {
+    "leads": 23,
+    "agents_registry": 35,
+    "deployed_contracts": 27,
+    "scheduled_tasks": 33,
+    "orchestration_events": 231,
+    "workflow_runs": 3
+  },
+  "running_ports": [
+    8001,
+    5173
+  ],
+  "service_health": {
+    "backend": "PASS",
+    "frontend": "n/a",
+    "database": "PASS",
+    "agents": "PASS",
+    "scheduler": "PASS",
+    "memory": "PASS",
+    "brain": "PASS",
+    "browser": "n/a",
+    "voice": "PASS",
+    "crypto": "PASS",
+    "crm": "n/a",
+    "automation": "PASS",
+    "api": "PASS",
+    "orchestration": "PASS"
+  },
+  "active_agents": 33,
+  "file_count_tracked": 73
+}
