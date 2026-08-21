@@ -1,8 +1,0 @@
-OK
-corners=[(126, 146, 161), (126, 146, 161), (134, 94, 58), (134, 94, 58)]
-window_samples=[(151, 192, 228), (148, 123, 93), (100, 149, 86), (146, 122, 94), (147, 120, 87), (144, 121, 84), (153, 195, 231), (149, 124, 95), (101, 151, 87)]
-fruit_center=(255, 140, 40)
-fruit_stills=12
-dog_stills=8
-gym_meta={'ai_count': 0, 'local_count': 3, 'source': 'local_illustration', 'forced': True, 'hero_opener': False, 'brand': False, 'creative_abstract': False, 'is_fruit': False, 'speaking': False, 'character_topic': False, 'illustration_subject': 'gym', 'pollinations_calls': None, 'local_talking_fruits': False, 'opener': 'illustration'}
-fruit_meta_source=local_talking_fruits

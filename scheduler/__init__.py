@@ -1,7 +1,4 @@
-"""Scheduler / orchestration package.
-
-Import concrete modules directly (e.g. scheduler.task_queue) to avoid circular imports.
-"""
+"""Scheduler package exports."""
 
 from scheduler.task_scheduler import TaskScheduler, global_scheduler
 

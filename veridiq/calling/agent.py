@@ -30,8 +30,6 @@ _VALID_INTENTS = frozenset(
         "run_influencer",
         "influencer_research",
         "deep_research",
-        "request_personal_meeting",
-        "schedule_timed_call",
         "help",
         "chat",
     }
@@ -41,8 +39,8 @@ _SYSTEM_PROMPT = """You are Marcus, VERIDIQ's AI Calling Coordinator — an in-a
 and a capable general AI assistant. Answer any topic fully when intent=chat.
 The user is speaking to you after pressing Call. Parse their message into ONE JSON object only
 (no markdown, no prose outside JSON) with this shape:
-{"intent":"<one of: run_marketing|run_influencer|influencer_research|deep_research|request_personal_meeting|schedule_timed_call|help|chat>",
- "query":"<optional search query OR specialist name/topic for personal meeting>",
+{"intent":"<one of: run_marketing|run_influencer|influencer_research|deep_research|help|chat>",
+ "query":"<optional search query for influencer_research or deep_research>",
  "niche":"<optional niche>",
  "reply":"<spoken reply confirming an action, answering help, OR a full clear answer for chat>"}
 
@@ -52,9 +50,6 @@ Intent guide:
 - influencer_research: research creators / find influencers / influencer research (extract query)
 - deep_research: deep research / find out / look up / "nikaal do" / extract facts from the web
   on ANY topic (not influencer-specific). Put the topic in "query".
-- request_personal_meeting: arrange / book / set up a personal meeting with a specialist
-  (Canva, daily posts, Lena, Jasper, content, social poster, etc.). Put specialist in "query".
-- schedule_timed_call: schedule / start a timed voice call window (2-minute budget)
 - help: what can you do / commands / capabilities
 - chat: greetings OR general knowledge on ANY topic (science, tech, blockchain, history,
   definitions, how-tos) that is not an action intent above
@@ -95,9 +90,9 @@ def agent_persona() -> dict[str, Any]:
         "skills": ident.get("skills") or [],
         "avatar_hue": ident.get("avatar_hue", 18),
         "greeting": (
-            f"Hi — I'm {ident.get('name') or 'Marcus'}. Ask me anything, run marketing/influencer, "
-            "or say “arrange a personal meeting with the Canva / daily posts agent” — "
-            "I'll post in Collaboration Hub for approval, then you accept the invite to join LiveKit."
+            f"Hi — I'm {ident.get('name') or 'Marcus'}. Ask me anything (general knowledge), "
+            "or give a command: run marketing, command influencer, research creators, "
+            "or deep-research a topic. I'll run real APIs and point you to Live Agent Runtime when agents work."
         ),
     }
 
@@ -158,38 +153,6 @@ def _keyword_intent(message: str) -> dict[str, Any]:
             "reply": "Running Adrian (influencer relations) on the default campaign.",
         }
 
-    # Personal meeting with specialist via Collaboration Hub
-    from veridiq.calling.live_threads import extract_meeting_request
-
-    meeting_req = extract_meeting_request(message)
-    if meeting_req:
-        return {
-            "intent": "request_personal_meeting",
-            "query": meeting_req.get("specialist_query") or q,
-            "niche": "",
-            "reply": "I'll post a personal-meeting request in the Collaboration Hub for the specialist to approve.",
-        }
-
-    # Timed voice call window (budget-enforced)
-    timed_markers = (
-        "timed call",
-        "schedule call",
-        "schedule a call",
-        "start a timed",
-        "2 minute call",
-        "2-minute call",
-        "two minute call",
-        "call budget",
-        "voice call window",
-    )
-    if any(m in q for m in timed_markers):
-        return {
-            "intent": "schedule_timed_call",
-            "query": "",
-            "niche": "",
-            "reply": "Scheduling a timed voice-call window within today's calling budget.",
-        }
-
     # General deep research (any topic) — English + Roman-Urdu task phrasing
     from veridiq.research.deep_research import extract_research_query, looks_like_research_task
 
@@ -208,10 +171,9 @@ def _keyword_intent(message: str) -> dict[str, Any]:
             "query": "",
             "niche": "",
             "reply": (
-                "I can: (1) answer general questions, (2) deep web research, "
-                "(3) run marketing agencies, (4) influencer runs/research, "
-                "(5) arrange a personal LiveKit meeting with a specialist (Canva/daily posts) "
-                "via Collaboration Hub invite, (6) schedule a timed voice call within the daily budget."
+                "I can: (1) answer general questions on any topic, (2) run deep web research, "
+                "(3) run the marketing agencies team, (4) run influencer relations (Adrian), "
+                "(5) research influencers/creators. After a team run, open Live Agent Runtime."
             ),
         }
 
@@ -428,11 +390,7 @@ def _execute_run_influencer() -> dict[str, Any]:
     agent = get_agent(agent_type)
     run_job_id = f"agent-run-{uuid.uuid4().hex[:12]}"
     team_run_id = f"infl-{uuid.uuid4().hex[:10]}"
-    # Individual influencer command (not full team) — bounded agent run + queue auto-clear + postings handoff.
-    run_payload = build_run_payload(
-        agent_type, campaign["campaign_id"], team_run=False, team_run_id=team_run_id, auto_clear_queue=True
-    )
-    run_payload["handoff_to_postings"] = True
+    run_payload = build_run_payload(agent_type, campaign["campaign_id"], team_run=True, team_run_id=team_run_id)
     min_visible = global_worker_pool.marketing_min_visible_sec()
 
     def _fn():
@@ -448,17 +406,13 @@ def _execute_run_influencer() -> dict[str, Any]:
         platform=channel_hint,
         channel=channel_hint,
     )
-    skip_note = ""
-    if run_payload.get("queue_prepared") and run_payload["queue_prepared"].get("cleared"):
-        skip_note = f" Cleared {run_payload['queue_prepared']['cleared']} old draft(s) so new work could queue."
     return {
         "ok": True,
         "action": "run_influencer",
         "status": result.get("status") or "started",
         "message": (
             f"Adrian (influencer relations) started on '{campaign['name']}'. "
-            "Drafts land in the marketing queue; captions also hand off toward Postings."
-            + skip_note
+            "Drafts will land in the marketing queue for approval."
         ),
         "campaign_id": campaign["campaign_id"],
         "campaign_name": campaign["name"],
@@ -467,7 +421,6 @@ def _execute_run_influencer() -> dict[str, Any]:
         "links": [
             {"label": "Live Agent Runtime", "href": LINK_LIVE_RUNTIME},
             {"label": "Marketing Agency", "href": LINK_MARKETING},
-            {"label": "Postings Studio", "href": "/dashboard/postings"},
         ],
     }
 
@@ -522,64 +475,6 @@ def _execute_deep_research(*, query: str) -> dict[str, Any]:
     }
 
 
-def _execute_request_personal_meeting(*, query: str) -> dict[str, Any]:
-    from veridiq.calling.live_threads import request_personal_meeting
-
-    result = request_personal_meeting(specialist_query=query or "canva daily posts", topic=query or None)
-    return {
-        "ok": bool(result.get("ok")),
-        "action": "request_personal_meeting",
-        "status": "ok" if result.get("ok") else "error",
-        "message": result.get("message") or "Posted personal meeting request.",
-        "specialist": result.get("specialist"),
-        "invite": result.get("invite"),
-        "thread": result.get("thread"),
-        "links": result.get("links")
-        or [
-            {"label": "Collaboration Hub", "href": "/dashboard/collaboration"},
-            {"label": "AI Calling", "href": "/dashboard/calling"},
-        ],
-    }
-
-
-def _execute_schedule_timed_call(*, purpose: str = "") -> dict[str, Any]:
-    from veridiq.calling.timed_calls import schedule_timed_call, start_session
-
-    scheduled = schedule_timed_call(
-        purpose=purpose or "Marcus timed calling window",
-        agent_type=AGENT_TYPE,
-        user_key="default",
-        record_chain=True,
-    )
-    if not scheduled.get("ok"):
-        return {
-            "ok": False,
-            "action": "schedule_timed_call",
-            "status": scheduled.get("status") or "error",
-            "message": scheduled.get("message") or "Could not schedule timed call.",
-            "budget": scheduled.get("budget"),
-            "links": [{"label": "AI Calling", "href": "/dashboard/calling"}],
-        }
-    sid = (scheduled.get("session") or {}).get("session_id")
-    started = start_session(sid) if sid else None
-    return {
-        "ok": True,
-        "action": "schedule_timed_call",
-        "status": "active" if (started or {}).get("ok") else "scheduled",
-        "message": (
-            f"{scheduled.get('message')} "
-            + ((started or {}).get("message") or "")
-        ).strip(),
-        "session": (started or {}).get("session") or scheduled.get("session"),
-        "budget": scheduled.get("budget"),
-        "chain": scheduled.get("chain"),
-        "links": [
-            {"label": "AI Calling", "href": "/dashboard/calling"},
-            {"label": "Live Agent Runtime", "href": LINK_LIVE_RUNTIME},
-        ],
-    }
-
-
 def handle_command(message: str, *, history: Optional[list[dict[str, str]]] = None) -> dict[str, Any]:
     """Parse a natural-language command and execute the matching real action."""
     _ = history  # reserved for multi-turn context later
@@ -619,12 +514,6 @@ def handle_command(message: str, *, history: Optional[list[dict[str, str]]] = No
         research_body = action_result.get("message") or ""
         summary = (action_result.get("research") or {}).get("summary")
         reply = (summary or research_body or reply).strip()
-    elif intent == "request_personal_meeting":
-        action_result = _execute_request_personal_meeting(query=parsed.get("query") or text)
-        reply = f"{reply} {action_result.get('message', '')}".strip()
-    elif intent == "schedule_timed_call":
-        action_result = _execute_schedule_timed_call(purpose=parsed.get("query") or text)
-        reply = f"{reply} {action_result.get('message', '')}".strip()
     elif intent == "help":
         action_result = {
             "ok": True,
@@ -634,7 +523,6 @@ def handle_command(message: str, *, history: Optional[list[dict[str, str]]] = No
             "links": [
                 {"label": "Live Agent Runtime", "href": LINK_LIVE_RUNTIME},
                 {"label": "Marketing Agency", "href": LINK_MARKETING},
-                {"label": "Collaboration Hub", "href": "/dashboard/collaboration"},
             ],
         }
     else:

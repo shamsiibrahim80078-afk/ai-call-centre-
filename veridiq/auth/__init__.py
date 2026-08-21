@@ -1,1 +1,0 @@
-"""VERIDIQ auth package."""

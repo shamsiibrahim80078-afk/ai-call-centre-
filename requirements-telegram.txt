@@ -1,6 +1,5 @@
-# Slim deps for the Telegram 24/7 worker / webhook service (Fly.io, Render, etc.).
+# Slim deps for the Telegram 24/7 worker / webhook service on Render.
 # Prefer this over full requirements.txt when the service only runs the bot.
-# Fly: docs/DEPLOY_TELEGRAM_FLY.md  |  Render: docs/DEPLOY_TELEGRAM_RENDER.md
 requests==2.34.2
 python-dotenv==1.1.1
 fastapi==0.141.1
